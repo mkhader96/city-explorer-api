@@ -5,7 +5,8 @@ const weather = require('./data/weather.json');
 require('dotenv').config();
 server.use(cors());
 
-PORT = 3000;
+
+const PORT = process.env.PORT || 3000;
 
 server.get('/', (req, res) => {
     res.send('Hello World');
@@ -17,16 +18,34 @@ server.get('/test', (req, res) => {
 
 })
 
-server.get('/weather', (req, res) => {
-    let weatherData = weather.map((item) => {
-        return item.data[0].clouds;
-        
-    });
-    console.log(weatherData);
-    res.send(weatherData);
-    console.log(req.query)
-    
-})
+server.get('/weather', handleWeather);
+server.use('*', (req, res) => res.status(404).send('page not found'));
+
+function handleWeather(req, res) {
+  let lat = req.query.lat;
+  let lon = req.query.lon;
+  const city = weather.find(city => city.lat === lat && city.lon === lon);
+  if(city != undefined)
+  {
+    const weatherArray = city.data.map(day => new Forecast(day));
+    res.status(200).send(weatherArray);
+    console.log(weatherArray);
+  }
+  else
+  {
+    errorHandler(res);
+  }
+}
+
+function errorHandler(res) {
+  res.status(500).send('something went wrong');
+}
+  
+
+function Forecast(day) {
+  this.date = day.valid_date
+  this.description = day.weather.description
+}
 
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
